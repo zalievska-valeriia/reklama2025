@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Топ 10 міськрад за закупівлями реклами у 2025</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; background: #fff; font-family: 'Roboto', sans-serif; }
+  .wrap { padding: 24px 24px 16px 24px; width: 100%; }
+  .chart-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2a055b;
+    line-height: 1.3;
+    margin-bottom: 16px;
+  }
+  .legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .leg-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #444; }
+  .leg-sq { width: 11px; height: 11px; border-radius: 2px; flex-shrink: 0; }
+  .chart-outer { position: relative; width: 100%; }
+  .footer { margin-top: 12px; font-size: 11px; color: #aaa; line-height: 1.5; }
+  @media (max-width: 480px) {
+    .wrap { padding: 16px 16px 12px 16px; }
+    .chart-title { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="chart-title">Топ 10 міськрад за закупівлями реклами у 2025</div>
+  <div class="legend">
+    <span class="leg-item"><span class="leg-sq" style="background:#2a055b;"></span>Закупівлі на 2025 рік</span>
+    <span class="leg-item"><span class="leg-sq" style="background:#e45066;"></span>Закупівлі на 2026 рік</span>
+  </div>
+  <div class="chart-outer">
+    <canvas id="chart" role="img" aria-label="Горизонтальний стекований графік закупівель міськрад у 2025 році. Криворізька міськрада — найбільше, 37 млн грн."></canvas>
+  </div>
+  <div class="footer">Дані про закупівлі послуг з реклами у Prozorro за 2025 рік з BI Prozorro.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const raw = [
+  { label: 'Криворізька міськрада',         v2025: 17.3, v2026: 19.7 },
+  { label: 'КМДА',                           v2025: 17.7, v2026: 0.7  },
+  { label: "Кам'янська міськрада",           v2025: 12.1, v2026: 0.6  },
+  { label: 'Харківська міськрада',           v2025: 9.4,  v2026: 9.9  },
+  { label: 'Шосткинська міськрада',          v2025: 8.10, v2026: null },
+  { label: 'Дніпровська міськрада',          v2025: 8.7,  v2026: null },
+  { label: 'Миколаївська міськрада',         v2025: 5.00, v2026: null },
+  { label: 'Бориспільська міськрада',        v2025: 3.30, v2026: null },
+  { label: 'Івано-Франківська міськрада',    v2025: 3.20, v2026: null },
+  { label: 'Тернопільська міськрада',        v2025: 2.60, v2026: null },
+];
+
+raw.sort((a, b) => ((b.v2025||0)+(b.v2026||0)) - ((a.v2025||0)+(a.v2026||0)));
+
+const labels   = raw.map(d => d.label);
+const data2025 = raw.map(d => d.v2025);
+const data2026 = raw.map(d => d.v2026);
+const totals   = raw.map(d => (d.v2025||0) + (d.v2026||0));
+
+function fmt(n) {
+  const s = Number.isInteger(n) ? n.toString() : n.toFixed(1).replace('.', ',');
+  return s + '\u00a0млн\u00a0грн';
+}
+
+function isMobile() { return window.innerWidth < 480; }
+
+function calcCanvasHeight() {
+  const barH = isMobile() ? 26 : 36;
+  const gap  = isMobile() ? 18 : 24;
+  return labels.length * (barH + gap) + 24;
+}
+
+function getRightPad()  { return isMobile() ? 88 : 112; }
+function getLeftPad()   { return isMobile() ? 4  : 8;   }
+function getLabelSize() { return isMobile() ? 10 : 12;  }
+function getValueSize() { return isMobile() ? 10 : 12;  }
+
+function applyHeight() {
+  document.querySelector('.chart-outer').style.height = calcCanvasHeight() + 'px';
+}
+applyHeight();
+
+const chart = new Chart(document.getElementById('chart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'Закупівлі на 2025 рік',
+        data: data2025,
+        backgroundColor: '#2a055b',
+        borderSkipped: false,
+        barPercentage: 0.55,
+        categoryPercentage: 0.9,
+      },
+      {
+        label: 'Закупівлі на 2026 рік',
+        data: data2026,
+        backgroundColor: '#e45066',
+        borderSkipped: false,
+        barPercentage: 0.55,
+        categoryPercentage: 0.9,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    animation: { duration: 400 },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.parsed.x != null
+            ? ` ${ctx.dataset.label}: ${ctx.parsed.x.toFixed(1).replace('.',',')} млн грн`
+            : ''
+        }
+      }
+    },
+    scales: {
+      x: { stacked: true, display: false },
+      y: {
+        stacked: true,
+        grid: { display: false },
+        border: { display: false },
+        ticks: {
+          font: { family: 'Roboto', size: getLabelSize(), weight: '400' },
+          color: '#2a055b',
+          maxRotation: 0,
+          autoSkip: false,
+          padding: 8,
+        }
+      }
+    },
+    layout: {
+      padding: {
+        right: getRightPad(),
+        left:  getLeftPad(),
+        top: 4,
+        bottom: 4
+      }
+    }
+  },
+  plugins: [{
+    id: 'barLabels',
+    afterDatasetsDraw(ch) {
+      const ctx = ch.ctx;
+      const fs = getValueSize();
+      ch.data.labels.forEach((_, i) => {
+        const meta0 = ch.getDatasetMeta(0);
+        const meta1 = ch.getDatasetMeta(1);
+        const bar0 = meta0.data[i];
+        const bar1 = meta1.data[i];
+        const rightBar = (data2026[i] != null && bar1) ? bar1 : bar0;
+        ctx.save();
+        ctx.fillStyle = '#2a055b';
+        ctx.font = `500 ${fs}px Roboto, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(fmt(totals[i]), rightBar.x + 8, rightBar.y);
+        ctx.restore();
+      });
+    }
+  }]
+});
+
+function sendHeight() {
+  const h = document.documentElement.scrollHeight;
+  window.parent.postMessage({ type: 'iframeHeight', height: h }, '*');
+}
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    applyHeight();
+    chart.options.scales.y.ticks.font.size = getLabelSize();
+    chart.options.layout.padding.right = getRightPad();
+    chart.options.layout.padding.left  = getLeftPad();
+    chart.update();
+    sendHeight();
+  }, 100);
+});
+
+window.addEventListener('load', () => {
+  chart.update();
+  setTimeout(sendHeight, 200);
+});
+</script>
+</body>
+</html>
