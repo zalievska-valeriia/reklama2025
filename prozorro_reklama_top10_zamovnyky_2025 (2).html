@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 найбільших замовників реклами 2025</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; background: #fff; font-family: 'Roboto', sans-serif; }
+  .wrap { padding: 24px 24px 16px 24px; width: 100%; }
+  .chart-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2a055b;
+    line-height: 1.3;
+    margin-bottom: 20px;
+  }
+  .chart-outer { position: relative; width: 100%; }
+  .footer { margin-top: 12px; font-size: 11px; color: #aaa; line-height: 1.5; }
+  @media (max-width: 480px) {
+    .wrap { padding: 16px 16px 12px 16px; }
+    .chart-title { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="chart-title">10 найбільших замовників реклами 2025</div>
+  <div class="chart-outer">
+    <canvas id="chart" role="img" aria-label="Горизонтальний графік 10 найбільших замовників реклами у 2025 році. Приватбанк — найбільше, 129,6 млн грн."></canvas>
+  </div>
+  <div class="footer">Дані про закупівлі послуг з реклами у Prozorro за 2025 рік з BI Prozorro, що включають закупівлі самих головних органів і підпорядкованих їм структур.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const raw = [
+  { label: 'Приватбанк',                    val: 129.6, isMiskrada: false },
+  { label: 'Ощадбанк',                      val: 56.0,  isMiskrada: false },
+  { label: 'Нафтогаз України',              val: 46.6,  isMiskrada: false },
+  { label: 'Криворізька міськрада',          val: 37.0,  isMiskrada: true  },
+  { label: 'Міністерство внутрішніх справ', val: 21.5,  isMiskrada: false },
+  { label: 'Харківська міськрада',           val: 19.3,  isMiskrada: true  },
+  { label: 'КМДА',                           val: 18.4,  isMiskrada: true  },
+  { label: 'Міністерство освіти',            val: 17.5,  isMiskrada: false },
+  { label: 'Міністерство інфраструктури',   val: 15.4,  isMiskrada: false },
+  { label: "Кам'янська міськрада",          val: 12.8,  isMiskrada: true  },
+];
+
+raw.sort((a, b) => b.val - a.val);
+
+const labels      = raw.map(d => d.label);
+const values      = raw.map(d => d.val);
+const isMiskrada  = raw.map(d => d.isMiskrada);
+const colors      = raw.map(d => d.isMiskrada ? '#e45066' : '#2a055b');
+
+function fmt(n) {
+  const s = Number.isInteger(n) ? n.toString() : n.toFixed(1).replace('.', ',');
+  return s + '\u00a0млн\u00a0грн';
+}
+
+function isMobile() { return window.innerWidth < 480; }
+
+function calcCanvasHeight() {
+  const barH = isMobile() ? 26 : 36;
+  const gap  = isMobile() ? 18 : 24;
+  return labels.length * (barH + gap) + 24;
+}
+
+function getRightPad()  { return isMobile() ? 96 : 120; }
+function getLabelSize() { return isMobile() ? 10 : 12;  }
+function getValueSize() { return isMobile() ? 10 : 12;  }
+
+function applyHeight() {
+  document.querySelector('.chart-outer').style.height = calcCanvasHeight() + 'px';
+}
+applyHeight();
+
+const chart = new Chart(document.getElementById('chart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      data: values,
+      backgroundColor: colors,
+      borderSkipped: false,
+      barPercentage: 0.55,
+      categoryPercentage: 0.9,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y',
+    animation: { duration: 400 },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${ctx.parsed.x.toFixed(1).replace('.',',')} млн грн`
+        }
+      }
+    },
+    scales: {
+      x: { stacked: false, display: false },
+      y: {
+        grid: { display: false },
+        border: { display: false },
+        ticks: {
+          font(ctx) {
+            const idx = ctx.index;
+            const bold = isMiskrada[idx];
+            return {
+              family: 'Roboto',
+              size: getLabelSize(),
+              weight: bold ? '700' : '400',
+            };
+          },
+          color(ctx) {
+            return '#2a055b';
+          },
+          maxRotation: 0,
+          autoSkip: false,
+          padding: 8,
+        },
+        afterFit(scale) {
+          scale.width = isMobile() ? 140 : 210;
+        }
+      }
+    },
+    layout: {
+      padding: { right: getRightPad(), left: 0, top: 4, bottom: 4 }
+    }
+  },
+  plugins: [{
+    id: 'barLabels',
+    afterDatasetsDraw(ch) {
+      const ctx = ch.ctx;
+      const fs = getValueSize();
+      ch.data.labels.forEach((_, i) => {
+        const meta = ch.getDatasetMeta(0);
+        const bar = meta.data[i];
+        ctx.save();
+        ctx.fillStyle = '#2a055b';
+        ctx.font = `500 ${fs}px Roboto, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(fmt(values[i]), bar.x + 8, bar.y);
+        ctx.restore();
+      });
+    }
+  }]
+});
+
+function sendHeight() {
+  const h = document.documentElement.scrollHeight;
+  window.parent.postMessage({ type: 'iframeHeight', height: h }, '*');
+}
+
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    applyHeight();
+    chart.options.scales.y.ticks.font = function(ctx) {
+      return {
+        family: 'Roboto',
+        size: getLabelSize(),
+        weight: isMiskrada[ctx.index] ? '700' : '400',
+      };
+    };
+    chart.options.layout.padding.right = getRightPad();
+    chart.update();
+    sendHeight();
+  }, 100);
+});
+
+window.addEventListener('load', () => {
+  chart.update();
+  setTimeout(sendHeight, 200);
+});
+</script>
+</body>
+</html>
