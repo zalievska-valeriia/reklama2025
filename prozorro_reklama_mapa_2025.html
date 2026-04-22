@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Закупівлі реклами по регіонах України 2025</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;font-family:'Roboto',sans-serif;background:#fff;color:#2a055b}
+.wrap{padding:24px 24px 16px}
+.chart-title{font-size:22px;font-weight:700;color:#2a055b;line-height:1.3;margin-bottom:6px}
+.subtitle{font-size:13px;color:#888;margin-bottom:20px}
+#map-wrap{position:relative;width:100%}
+#map-svg{width:100%;height:auto;display:block}
+.region{cursor:pointer;stroke:#fff;stroke-width:0.6;transition:opacity .15s}
+.region:hover{opacity:.78}
+#panel{display:none;position:absolute;top:0;right:0;width:240px;background:#fff;border:1px solid #e0d8f0;border-radius:8px;padding:16px;box-shadow:0 2px 12px rgba(42,5,91,.10)}
+#panel.visible{display:block}
+#px{position:absolute;top:8px;right:10px;cursor:pointer;font-size:16px;color:#aaa;line-height:1}
+#pname{font-size:15px;font-weight:700;color:#2a055b;margin-bottom:10px;padding-right:16px}
+.prow{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #f0ebf8}
+.prow:last-child{border-bottom:none}
+.plabel{color:#666}
+.pval{font-weight:500;color:#2a055b}
+.pnote{font-size:11px;color:#e45066;margin-top:8px;line-height:1.5;background:#fff0f2;border-radius:4px;padding:6px 8px}
+.legend{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.leg-bar{height:10px;width:180px;border-radius:3px;background:linear-gradient(to right,#e8e0f5,#2a055b)}
+.leg-labels{display:flex;justify-content:space-between;width:180px;font-size:10px;color:#888;margin-top:2px}
+.footer{margin-top:14px;font-size:11px;color:#aaa;line-height:1.5}
+@media(max-width:600px){
+  #panel{position:static;width:100%;margin-top:12px;box-shadow:none}
+  .chart-title{font-size:17px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="chart-title">Закупівлі реклами у Prozorro 2025</div>
+  <div class="subtitle">Сума договорів по регіонах, млн грн</div>
+  <div id="map-wrap">
+    <svg id="map-svg" viewBox="0 0 900 580" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div id="panel">
+      <span id="px">✕</span>
+      <div id="pname"></div>
+      <div id="prows"></div>
+    </div>
+  </div>
+  <div class="legend">
+    <div>
+      <div class="leg-bar"></div>
+      <div class="leg-labels"><span>0</span><span>346 млн грн</span></div>
+    </div>
+  </div>
+  <div class="footer">Дані про закупівлі послуг з реклами у Prozorro за 2025 рік з BI Prozorro, що включають закупівлі самих головних органів і підпорядкованих їм структур.</div>
+</div>
+
+<script>
+const DATA = {
+  "Київська":       { val: 346.2, note: "З них 272,3 млн грн — замовники в окремих сферах господарювання, що не є замовниками у розумінні закону (держбанки, Укрпошта, Нафтогаз тощо), зареєстровані у Києві." },
+  "Дніпропетровська":{ val: 75.5 },
+  "Харківська":     { val: 34.8 },
+  "Сумська":        { val: 14.0 },
+  "Одеська":        { val: 11.0 },
+  "Івано-Франківська":{ val: 10.9 },
+  "Рівненська":     { val: 10.9 },
+  "Полтавська":     { val: 10.9 },
+  "Львівська":      { val: 10.4 },
+  "Черкаська":      { val: 8.3 },
+  "Миколаївська":   { val: 8.0 },
+  "Вінницька":      { val: 7.7 },
+  "Хмельницька":    { val: 6.1 },
+  "Волинська":      { val: 5.6 },
+  "Тернопільська":  { val: 5.3 },
+  "Житомирська":    { val: 5.3 },
+  "Кіровоградська": { val: 3.7 },
+  "Чернігівська":   { val: 3.7 },
+  "Запорізька":     { val: 3.6 },
+  "Чернівецька":    { val: 2.8 },
+  "Закарпатська":   { val: 2.6 },
+  "Луганська":      { val: 2.0 },
+  "Херсонська":     { val: 1.0 },
+  "Донецька":       { val: 1.0 },
+};
+
+// Mapping from GeoJSON name to Ukrainian name
+const NAME_MAP = {
+  "Vinnytsia Oblast":       "Вінницька",
+  "Volyn Oblast":           "Волинська",
+  "Dnipropetrovsk Oblast":  "Дніпропетровська",
+  "Donetsk Oblast":         "Донецька",
+  "Zhytomyr Oblast":        "Житомирська",
+  "Zakarpattia Oblast":     "Закарпатська",
+  "Zaporizhia Oblast":      "Запорізька",
+  "Ivano-Frankivsk Oblast": "Івано-Франківська",
+  "Kyiv Oblast":            "Київська",
+  "Kirovohrad Oblast":      "Кіровоградська",
+  "Luhansk Oblast":         "Луганська",
+  "Lviv Oblast":            "Львівська",
+  "Mykolaiv Oblast":        "Миколаївська",
+  "Odessa Oblast":          "Одеська",
+  "Poltava Oblast":         "Полтавська",
+  "Rivne Oblast":           "Рівненська",
+  "Sumy Oblast":            "Сумська",
+  "Ternopil Oblast":        "Тернопільська",
+  "Kharkiv Oblast":         "Харківська",
+  "Kherson Oblast":         "Херсонська",
+  "Khmelnytskyi Oblast":    "Хмельницька",
+  "Cherkasy Oblast":        "Черкаська",
+  "Chernivtsi Oblast":      "Чернівецька",
+  "Chernihiv Oblast":       "Чернігівська",
+  "Kiev":                   "Київська",
+};
+
+const maxVal = 346.2;
+
+function valToColor(v) {
+  if (!v) return '#ede8f7';
+  const t = Math.pow(v / maxVal, 0.45);
+  const r = Math.round(42  + (232 - 42)  * (1 - t));
+  const g = Math.round(5   + (224 - 5)   * (1 - t));
+  const b = Math.round(91  + (245 - 91)  * (1 - t));
+  return `rgb(${r},${g},${b})`;
+}
+
+function fmt(n) {
+  if (!n) return '—';
+  return Number.isInteger(n) ? n + ' млн грн' : n.toFixed(1).replace('.', ',') + ' млн грн';
+}
+
+const GEO_URL = 'https://cdn.jsdelivr.net/npm/geojson-ukraine@1.0.2/ukraine.json';
+
+fetch(GEO_URL)
+  .then(r => r.json())
+  .then(geo => renderMap(geo))
+  .catch(() => {
+    fetch('https://cdn.jsdelivr.net/npm/@geo-maps/countries-land-10km@0.6.0/map.geo.json')
+      .then(r => r.json())
+      .catch(() => null);
+  });
+
+function geoToSVG(coords, proj) {
+  return coords.map(ring =>
+    ring.map((pt, i) => {
+      const [x, y] = proj(pt);
+      return (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+    }).join(' ') + 'Z'
+  ).join(' ');
+}
+
+function makeProjection(features) {
+  let minLon=180,maxLon=-180,minLat=90,maxLat=-90;
+  features.forEach(f => {
+    const geom = f.geometry;
+    const polys = geom.type === 'MultiPolygon' ? geom.coordinates : [geom.coordinates];
+    polys.forEach(poly => poly.forEach(ring => ring.forEach(([lon,lat]) => {
+      if(lon<minLon)minLon=lon; if(lon>maxLon)maxLon=lon;
+      if(lat<minLat)minLat=lat; if(lat>maxLat)maxLat=lat;
+    })));
+  });
+  const W=880, H=560, pad=20;
+  const scaleX=(W-2*pad)/(maxLon-minLon);
+  const scaleY=(H-2*pad)/(maxLat-minLat);
+  const scale=Math.min(scaleX,scaleY);
+  const offX=pad+(W-2*pad-(maxLon-minLon)*scale)/2;
+  const offY=pad+(H-2*pad-(maxLat-minLat)*scale)/2;
+  return ([lon,lat]) => [offX+(lon-minLon)*scale, offY+(maxLat-lat)*scale];
+}
+
+function renderMap(geo) {
+  const svg = document.getElementById('map-svg');
+  const features = geo.features;
+  const proj = makeProjection(features);
+
+  features.forEach(f => {
+    const rawName = f.properties.name || f.properties.NAME_1 || f.properties.shapeName || '';
+    const ukName = NAME_MAP[rawName] || rawName;
+    const info = DATA[ukName];
+    const color = info ? valToColor(info.val) : '#ede8f7';
+
+    const geom = f.geometry;
+    const polys = geom.type === 'MultiPolygon' ? geom.coordinates : [geom.coordinates];
+
+    polys.forEach(poly => {
+      const d = geoToSVG(poly, proj);
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', color);
+      path.setAttribute('class', 'region');
+      path.dataset.name = ukName;
+      path.dataset.val = info ? info.val : '';
+      path.addEventListener('click', () => showPanel(ukName, info));
+      svg.appendChild(path);
+    });
+  });
+}
+
+function showPanel(name, info) {
+  document.getElementById('pname').textContent = name + ' область';
+  const rows = document.getElementById('prows');
+  rows.innerHTML = '';
+
+  const row = document.createElement('div');
+  row.className = 'prow';
+  row.innerHTML = `<span class="plabel">Закупівлі реклами</span><span class="pval">${info ? fmt(info.val) : '—'}</span>`;
+  rows.appendChild(row);
+
+  if (info && info.note) {
+    const note = document.createElement('div');
+    note.className = 'pnote';
+    note.textContent = '* ' + info.note;
+    rows.appendChild(note);
+  }
+
+  document.getElementById('panel').classList.add('visible');
+}
+
+document.getElementById('px').addEventListener('click', () => {
+  document.getElementById('panel').classList.remove('visible');
+});
+
+function sendHeight() {
+  window.parent.postMessage({ type: 'iframeHeight', height: document.documentElement.scrollHeight }, '*');
+}
+window.addEventListener('load', () => setTimeout(sendHeight, 400));
+window.addEventListener('resize', () => setTimeout(sendHeight, 100));
+</script>
+</body>
+</html>
